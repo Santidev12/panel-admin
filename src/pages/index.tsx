@@ -1,114 +1,196 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
-
-const inter = Inter({ subsets: ['latin'] })
+import { ChangeEvent, useEffect, useState } from "react";
+import styles from "../styles/Home.module.css";
+import axios from "axios";
+import { setAuthToken, getAuthToken } from "./api/localStorageUtil";
 
 export default function Home() {
+  const [sessionToken, setSessionToken] = useState<string>("");
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({
+    email: "",
+    password: "",
+  });
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (token) {
+      setIsLoggedIn(true);
+      setSessionToken(token);
+    }
+  }, []);
+
+  const handleFormChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginForm((prevLoginForm) => ({
+      ...prevLoginForm,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (loginForm.email.length <= 0 || loginForm.password.length <= 0) {
+      return alert("El usuario y la contraseña no pueden estar vacíos.");
+    }
+
+    try {
+      const { data } = await axios.post(process.env.NEXT_PUBLIC_API + "/auth/login", loginForm);
+      setLoginForm({ 
+        email: "",
+        password: "" 
+      });
+      const token = data.token;
+      setAuthToken(token);
+      setIsLoggedIn(true);  
+      setSessionToken(token);
+    } catch (error) {
+      alert(error);
+    }
+  };
+
+  const [createProjectForm, setCreateProjectForm] = useState<{ name: string; img: string }>({
+    name: "",
+    img: "",
+  });
+
+  const handleProjectFormChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCreateProjectForm((prevCreateProjectForm) => ({
+      ...prevCreateProjectForm,
+      [name]: value,
+    }));
+  };
+
+  const createProject = async () => {
+    try {
+      const { data } = await axios.post(process.env.NEXT_PUBLIC_API + "/projects", createProjectForm, {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
+      fetchProjects();
+      setCreateProjectForm({ name: "", img: "" });
+      console.log(data);
+      alert("Proyecto generado");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const { data } = await axios.get(process.env.NEXT_PUBLIC_API + '/projects');
+      console.log(data);
+      setProjects(data);
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (isLoggedIn)
+    return (
+      <>
+      <div className={`${styles['container']} d-grid h-20 border text-align-center align-items-center justify-content-center mt-2`}>
+        <div className="text-center">
+            <h2 className={`${styles['font']} form-icon pt-1`}>Create Your Project</h2>
+            </div>
+            
+            <div className="d-grid justify-content-center align-items-center text-align-center mt-2">
+              
+            <div className="mb-2 w-100">
+            <form>
+                <label className={`${styles['font2']} form-label`}>Project Name</label>
+                <input
+                  className="form-control"
+                  type="text"
+                  onChange={(e) => handleProjectFormChange(e)}
+                  name="name"
+                  value={createProjectForm.name}
+                  placeholder="MyFirstProject"
+                />
+                
+                <label className={`${styles['font2']} form-label pt-2`}>Url</label>
+                <input
+                  className="form-control pt-0"
+                  type="text"
+                  onChange={(e) => handleProjectFormChange(e)}
+                  name="img"
+                  value={createProjectForm.img}
+                  placeholder="image.svg"
+                />
+            </form>
+              </div>
+            
+                <button onClick={createProject} type="button" className={`${styles['font2']} btn bg-primary mt-4 w-80 mb-3`}>Create</button>
+            </div>
+            </div>
+    
+            <div className={`${styles['container']} border d-grid text-align-center align-items-center justify-content-center mt-3`}>
+
+            <div>
+            <h1 className={`${styles['font']} form-icon pt-1`}>Lista de Proyectos</h1>
+            </div>
+
+            <div>
+            <ul >
+              {projects?.map((project:any) => (
+                <li className={`${styles['font2']}`} key={project.id}>{project.name}{project.img}</li>
+              ))}
+            </ul>
+            </div>
+            </div>
+    
+
+
+      </>
+    );
+
   return (
     <>
-      <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className={`${styles.main} ${inter.className}`}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>src/pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
+    <div className={`${styles['container']} h-25 border d-grid align-items-center justify-content-center mt-5`}>
+      <div className="text-center">
+        <h2 className={`${styles['font']} form-icon pt-4`}>Login</h2>
+      </div>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
+      <div className="row justify-content-center my-3">
+
+        <div className="col-lg-6 w-100">
+        <form>
+          <label className={`${styles['font2']} form-label pt-2`}>email</label>
+          <input
+            className="form-control"
+            type="text"
+            name="email"
+            placeholder="example@123.com"
+            onChange={(e) => handleFormChange(e)}
+            value={loginForm.email}
+
           />
-        </div>
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
+          <label className={`${styles['font2']} form-label pt-2`}>Password</label>
+          <input
+            className="form-control"
+            type="password"
+            name="password"
+            placeholder="1s3f5wm9"
+            value={loginForm.password}
+            onChange={(e) => handleFormChange(e)}
+          />
+          </form>
+          </div>
+          <button className={`${styles['font2']} btn bg-primary mt-5 w-50 mb-3`} onClick={handleSubmit}>Login</button>
 
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
+      </div>
 
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+          </div>
+        
+        
     </>
-  )
-}
+  );
+} 
