@@ -18,3 +18,10 @@ body {
   justify-content: center;    
   height: 100vh;  
 }
+
+.styleitem{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}

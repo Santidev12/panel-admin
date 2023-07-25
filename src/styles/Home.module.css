@@ -4,12 +4,12 @@
   background-color: rgba(17, 25, 40, 0.25);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.125);  
-  padding: 38px;  
+  padding: 100px;  
   filter: drop-shadow(0 30px 10px rgba(0,0,0,0.125));
   display: flex;
   flex-direction: column;
   align-items: center;
-}
+  }
 
 
 .font{
@@ -21,4 +21,6 @@
   font-family: Tektur;
   font-size: 20px;
 }
+
+
 
